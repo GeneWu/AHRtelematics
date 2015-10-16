@@ -41,13 +41,18 @@ def turning_angles(trip):
     dd = np.sum(raw_speed_vec**2,axis=1)**0.5
     #cos<x1,x2> = np.dot(x1,x2)/|x1||x2|
     #angle range from [0,pi]
+
     angle = np.arccos( (dy[1:]*dy[:-1]+dx[1:]*dx[:-1]) / (dd[:-1]*dd[1:]) )
     not_nan = np.where(np.isfinite(angle))[0]
     angle = angle[not_nan]
-    angle_percentile = [np.percentile(angle,per*10) for per in range(0,11)]
+    if len(angle) <= 1:
+        angle_percentile = [0] * 11
+        speedyangle_percentile = [0] * 11
+    else:
+        angle_percentile = [np.percentile(angle,per*10) for per in range(0,11)]
 
-    speedyangle = angle * dd[:-1][not_nan]
-    speedyangle_percentile = [np.percentile(speedyangle,per*10) for per in range(0,11)]
+        speedyangle = angle * dd[:-1][not_nan]
+        speedyangle_percentile = [np.percentile(speedyangle,per*10) for per in range(0,11)]
     return angle_percentile, speedyangle_percentile
 
 def extract_features_from_trip(trip):
@@ -97,27 +102,38 @@ def extract_features_from_trip(trip):
     # 4.2 average deceleration over 5 seconds before stop, including the stop point
     end_points = stop_points[stop_points-interval+1 >= 0]
     pre_stop_acc = [(speed[idx] - speed[idx - 4]) / 5.0 for idx in end_points]
-    pre_stop_acc_mean = np.mean(pre_stop_acc)
-    pre_stop_acc_min = np.min(pre_stop_acc)
-    pre_stop_acc_std = np.std(pre_stop_acc)
+    if len(pre_stop_acc) < 1:
+        pre_stop_acc_mean = 0
+        pre_stop_acc_min = 0
+        pre_stop_acc_std = 0
+    else:
+        pre_stop_acc_mean = np.mean(pre_stop_acc)
+        pre_stop_acc_min = np.min(pre_stop_acc)
+        pre_stop_acc_std = np.std(pre_stop_acc)
 
     # 4.3 average acceleration over 5 seconds after start point, including the start point
     begin_points = start_points[start_points + interval - 1 < len(speed)]
-    post_stop_acc = [(speed[idx] - speed[idx + 4]) / 5.0 for idx in begin_points]
-    post_stop_acc_mean = np.mean(post_stop_acc)
-    post_stop_acc_max = np.max(post_stop_acc)
-    post_stop_acc_std = np.std(post_stop_acc)
+    post_stop_acc = [(speed[idx + 4] - speed[idx]) / 5.0 for idx in begin_points]
+    if len(post_stop_acc) < 1:
+        post_stop_acc_mean = 0
+        post_stop_acc_max = 0
+        post_stop_acc_std = 0
+    else:
+        post_stop_acc_mean = np.mean(post_stop_acc)
+        post_stop_acc_max = np.max(post_stop_acc)
+        post_stop_acc_std = np.std(post_stop_acc)
 
     return {'route' : np.array([duration, distance]),
             'speed' : np.concatenate((speed_percentile, acc_percentile, jerk_percentile, np.array([std_speed, std_acc, std_jerk, total_energy]) )),
             'turning' : np.concatenate((angle_percentile, speedyangle_percentile)),
-            'stop_points' : np.concatenate((n_stop_points, pre_stop_acc_mean, pre_stop_acc_min, pre_stop_acc_std, post_stop_acc_mean, post_stop_acc_max, post_stop_acc_std))
+            'stop_points' : np.array([n_stop_points, pre_stop_acc_mean, pre_stop_acc_min, pre_stop_acc_std, post_stop_acc_mean, post_stop_acc_max, post_stop_acc_std])
             }
 
 def extract_trips(driver_id, trip_id):
-    filename = os.path.join(DATA_DIR, str(driver_id) ,'%d.csv' % trip_id)
+    driver_id, trip_id = str(driver_id), str(trip_id)
+    filename = os.path.join(DATA_DIR, driver_id ,'%s.csv' % trip_id)
     res = extract_features_from_trip(np.array(pd.read_csv(filename)))
-    vertex_id = "%d_%d" % (driver_id, trip_id)
+    vertex_id = "%s_%s" % (driver_id, trip_id)
     return Vertex(vertex_id, res)
 
 if __name__ == "__main__":

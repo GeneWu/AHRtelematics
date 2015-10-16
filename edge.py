@@ -9,11 +9,11 @@ class Edge(object):
         value : attribute value
     """
     def __init__(self, name, value):
-        self.vertices = set()
+        self.vertices = []
         self.id = name + "_" + value
         self.name = name
         self.value = value
 
-    def add_vertex(vertex):
-        self.vertices.add(vertex)
+    def add_vertex(self, vertex):
+        self.vertices.append(vertex)
 

@@ -15,8 +15,8 @@ class Vertex(object):
         self.speed = attributes['speed']
         self.turning = attributes['turning']
         self.stop_points = attributes['stop_points']
-        self.rule_set = set()
+        self.rule_set = []
 
     def add_rule(self, rule):
-        self.rule_set.add(rule)
+        self.rule_set.append(rule)
 

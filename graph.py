@@ -2,7 +2,8 @@ import os
 import glob
 import numpy as np
 
-from vertex import Vertex
+from rule import *
+from feature import extract_trips
 
 class Graph(object):
     """
@@ -16,11 +17,23 @@ class Graph(object):
 
     def construct(self, data_dir):
         # create rule set
+        rule_list = [rule() for rule in Rule.__subclasses__()]
         for root, dirs, files in os.walk(data_dir):
-            driver_id = root.split('/')[-1]
             for fn in files:
-                trip_id = fn.split('.')[0]
-                vertex = extract_trips(driver_id, trip_id)
-                self.vertices.append(vertex)
+                if fn[-3:] == 'csv':
+                    driver_id = root.split('/')[-1]
+                    trip_id = fn.split('.')[0]
+                    vertex = extract_trips(driver_id, trip_id)
+                    self.vertices.append(vertex)
 
-                # apply the rules
+                    # apply the rules
+                    for rule in rule_list:
+                        output = rule.classify(vertex)
+                        if output:
+                            vertex.add_rule(output)
+        self.edges = [ edge for rule in rule_list for edge in rule.edges()]
+
+if __name__ == "__main__":
+    data_dir = "/Users/nickwang/Documents/Programs/python/projects/telematics/drivers"
+    g = Graph()
+    g.construct(data_dir)
