@@ -13,4 +13,13 @@ class TripLengthRule(Rule):
         self.short_edge = Edge(self.name, "short")
 
     def classify(self, vertex):
-        pass
+        time, distance = vertex.route[0], vertex.route[1]
+        #long trip
+        if distance > 1000 and time > 600:
+            long_edge.add_vertex(vertex)
+            return long_edge.id
+
+        if distance <= 100:
+            short_edge.add_vertex(vertex)
+            return short_edge.id
+
