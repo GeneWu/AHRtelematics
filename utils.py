@@ -44,5 +44,14 @@ def batch_insert():
     cursor.close()
     conn.close()
 
+def qsort(nums):
+    if len(nums) > 1:
+        q = nums[0]
+        nums = nums[1:]
+        return qsort([a for a in nums if a < q]) + [q] + qsort([b for b in nums if b >= q])
+    return nums
+
+
+
 if __name__ == "__main__":
 
